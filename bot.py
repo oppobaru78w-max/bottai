@@ -164,25 +164,31 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     keyboard = [
         [
             InlineKeyboardButton(
-                "💎 Ultra HD Asli (Rekomendasi)" + (" ✅" if current_mode == "standard" else ""),
+                "💎 Full HD 1080p (Rekomendasi TikTok)" + (" ✅" if current_mode == "standard" else ""),
                 callback_data="set_pref_standard",
             )
         ],
         [
             InlineKeyboardButton(
-                "🛡️ 100% Murni (C2PA Strip)" + (" ✅" if current_mode == "pure_c2pa" else ""),
+                "👑 Super 4K UHD (2160x3840)" + (" ✅" if current_mode == "super_4k" else ""),
+                callback_data="set_pref_super_4k",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🛡️ Resolusi Asli (Hanya C2PA Strip)" + (" ✅" if current_mode == "pure_c2pa" else ""),
                 callback_data="set_pref_pure_c2pa",
             )
         ],
         [
             InlineKeyboardButton(
-                "🔥 Agresif HD (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
+                "🔥 Agresif 1080p (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
                 callback_data="set_pref_aggressive",
             )
         ],
         [
             InlineKeyboardButton(
-                "🎬 Sinematik HD (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
+                "🎬 Sinematik 1080p (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
                 callback_data="set_pref_cinematic",
             )
         ],
@@ -264,16 +270,19 @@ async def handle_video_message(update: Update, context: ContextTypes.DEFAULT_TYP
 
     keyboard = [
         [
-            InlineKeyboardButton("💎 Ultra HD Asli (Rekomendasi Utama)", callback_data=f"proc_{job_id}_standard"),
+            InlineKeyboardButton("💎 Full HD 1080p (Rekomendasi TikTok)", callback_data=f"proc_{job_id}_standard"),
         ],
         [
-            InlineKeyboardButton("🛡️ 100% Murni (Hanya Hapus C2PA)", callback_data=f"proc_{job_id}_pure_c2pa"),
+            InlineKeyboardButton("👑 Super 4K UHD (2160x3840 Ultra HD)", callback_data=f"proc_{job_id}_super_4k"),
         ],
         [
-            InlineKeyboardButton("🔥 Agresif HD (Super Bypass)", callback_data=f"proc_{job_id}_aggressive"),
+            InlineKeyboardButton("🛡️ Resolusi Asli (Hanya C2PA)", callback_data=f"proc_{job_id}_pure_c2pa"),
         ],
         [
-            InlineKeyboardButton("🎬 Sinematik HD (35mm Grain)", callback_data=f"proc_{job_id}_cinematic"),
+            InlineKeyboardButton("🔥 Agresif 1080p (Super Bypass)", callback_data=f"proc_{job_id}_aggressive"),
+        ],
+        [
+            InlineKeyboardButton("🎬 Sinematik 1080p (35mm Grain)", callback_data=f"proc_{job_id}_cinematic"),
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -360,12 +369,20 @@ async def run_process_pipeline(
         await update.effective_chat.send_action(ChatAction.UPLOAD_VIDEO)
 
         processed_info = get_video_info(str(output_file))
+        pw = processed_info["width"]
+        ph = processed_info["height"]
+        if pw >= 2160 or ph >= 3840:
+            res_tag = "👑 4K Ultra HD"
+        elif pw >= 1080 or ph >= 1920:
+            res_tag = "💎 Full HD 1080p"
+        else:
+            res_tag = "HD"
 
         caption = (
             f"✅ **Video Berhasil Diproses! (Lolos Deteksi AI)**\n\n"
             f"🎯 **Mode**: `{preset_info['name']}`\n"
             f"⏱️ **Waktu Proses**: `{elapsed:.1f} detik`\n"
-            f"📏 **Resolusi**: `{processed_info['width']}x{processed_info['height']}`\n"
+            f"📏 **Resolusi**: `{pw}x{ph}` ({res_tag}) ✅\n"
             f"📦 **Ukuran**: `{processed_info['size_mb']:.2f} MB`\n\n"
             f"🛡️ **Status Keamanan TikTok:**\n"
             f"• C2PA Metadata: 100% Dihapus ✅\n"
@@ -448,25 +465,31 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "💎 Ultra HD Asli (Rekomendasi)" + (" ✅" if current_mode == "standard" else ""),
+                    "💎 Full HD 1080p (Rekomendasi TikTok)" + (" ✅" if current_mode == "standard" else ""),
                     callback_data="set_pref_standard",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "🛡️ 100% Murni (C2PA Strip)" + (" ✅" if current_mode == "pure_c2pa" else ""),
+                    "👑 Super 4K UHD (2160x3840)" + (" ✅" if current_mode == "super_4k" else ""),
+                    callback_data="set_pref_super_4k",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🛡️ Resolusi Asli (Hanya C2PA)" + (" ✅" if current_mode == "pure_c2pa" else ""),
                     callback_data="set_pref_pure_c2pa",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "🔥 Agresif HD (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
+                    "🔥 Agresif 1080p (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
                     callback_data="set_pref_aggressive",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "🎬 Sinematik HD (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
+                    "🎬 Sinematik 1080p (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
                     callback_data="set_pref_cinematic",
                 )
             ],
@@ -478,7 +501,7 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
             ],
         ]
         await query.message.reply_text(
-            "⚙️ **Pilih Mode Default Pemrosesan (Ultra HD):**",
+            "⚙️ **Pilih Mode Default Pemrosesan (Full HD / 4K):**",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -489,10 +512,11 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
         user_preferences[str(user_id)] = new_pref
         save_preferences(user_preferences)
         pref_names = {
-            "standard": "💎 Ultra HD Asli (Rekomendasi Utama)",
-            "pure_c2pa": "🛡️ 100% Murni (C2PA Strip)",
-            "aggressive": "🔥 Agresif HD (Super Bypass)",
-            "cinematic": "🎬 Sinematik HD (35mm Grain)",
+            "standard": "💎 Full HD 1080p (Rekomendasi TikTok)",
+            "super_4k": "👑 Super 4K UHD (2160x3840)",
+            "pure_c2pa": "🛡️ Resolusi Asli (Hanya C2PA)",
+            "aggressive": "🔥 Agresif 1080p (Super Bypass)",
+            "cinematic": "🎬 Sinematik 1080p (35mm Grain)",
             "ask": "❓ Selalu Tanya Setiap Kirim Video",
         }
         await query.edit_message_text(
