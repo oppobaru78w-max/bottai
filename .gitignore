@@ -1,0 +1,17 @@
+# Secrets & environment
+.env
+
+# Temporary files & video processing cache
+temp/
+*.mp4
+*.mkv
+*.mov
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+
+# Vercel
+.vercel
