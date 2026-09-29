@@ -100,6 +100,10 @@ def process_video_sync(
     orig_w = info["width"] or 1080
     orig_h = info["height"] or 1920
 
+    # Pastikan resolusi genap (divisible by 2) untuk libx264
+    orig_w = (int(orig_w) // 2) * 2
+    orig_h = (int(orig_h) // 2) * 2
+
     cmd = [ffmpeg_exe, "-y", "-hide_banner", "-i", input_path]
 
     # 1. Hapus metadata global, chapter, container tags, dan bitexact

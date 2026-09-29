@@ -17,6 +17,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
+from telegram.request import HTTPXRequest
 from telegram.constants import ParseMode, ChatAction
 from telegram.ext import (
     Application,
@@ -34,6 +35,9 @@ from processor import (
     process_video_sync,
 )
 
+import time
+import json
+
 # Setup logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -41,15 +45,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# User preference storage (in-memory: user_id -> default_preset)
-user_preferences = {}
+PREFS_FILE = config.BASE_DIR / "user_prefs.json"
+
+def load_preferences() -> dict:
+    if PREFS_FILE.exists():
+        try:
+            with open(PREFS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_preferences(prefs: dict) -> None:
+    try:
+        with open(PREFS_FILE, "w", encoding="utf-8") as f:
+            json.dump(prefs, f, indent=2)
+    except Exception as e:
+        logger.warning(f"Gagal menyimpan preferensi: {e}")
+
+user_preferences = load_preferences()
 
 # Active jobs tracking (to prevent spam/race conditions)
 active_jobs = set()
 
 
 def get_user_preset(user_id: int) -> str:
-    return user_preferences.get(user_id, "ask")
+    # Default adalah "standard" (💎 Ultra HD Asli) agar langsung diproses otomatis
+    return user_preferences.get(str(user_id), user_preferences.get(user_id, "standard"))
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -282,7 +304,7 @@ async def run_process_pipeline(
     preset_info = PRESETS.get(preset_key, PRESETS["standard"])
 
     # Path berkas sementara
-    session_uid = f"{user_id}_{job_id}_{int(asyncio.get_event_loop().time())}"
+    session_uid = f"{user_id}_{job_id}_{int(time.time())}"
     input_file = config.TEMP_DIR / f"input_{session_uid}.mp4"
     output_file = config.TEMP_DIR / f"output_{session_uid}.mp4"
 
@@ -299,8 +321,12 @@ async def run_process_pipeline(
         await update.effective_chat.send_action(ChatAction.RECORD_VIDEO)
 
         # Download file
-        tg_file = await context.bot.get_file(job_data["file_id"])
-        await tg_file.download_to_drive(custom_path=input_file)
+        tg_file = await context.bot.get_file(
+            job_data["file_id"], read_timeout=300, write_timeout=300
+        )
+        await tg_file.download_to_drive(
+            custom_path=str(input_file), read_timeout=300, write_timeout=300
+        )
 
         # Step 2: Proses Bypass
         await status_message.edit_text(
@@ -328,7 +354,7 @@ async def run_process_pipeline(
 
         # Step 3: Unggah Video Hasil
         await status_message.edit_text(
-            f"📤 **Mengunggah video hasil bypass ({elapsed:.1f} detik)...**",
+            f"📤 **Mengunggah video hasil bypass ({elapsed:.1f} detik)...**\n`Mohon tunggu sebentar...`",
             parse_mode=ParseMode.MARKDOWN,
         )
         await update.effective_chat.send_action(ChatAction.UPLOAD_VIDEO)
@@ -355,8 +381,10 @@ async def run_process_pipeline(
                 caption=caption,
                 parse_mode=ParseMode.MARKDOWN,
                 supports_streaming=True,
-                width=processed_info["width"],
-                height=processed_info["height"],
+                width=processed_info["width"] or None,
+                height=processed_info["height"] or None,
+                read_timeout=300,
+                write_timeout=300,
             )
 
         # Hapus pesan status sementara
@@ -392,7 +420,10 @@ async def run_process_pipeline(
 async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handler interaksi tombol inline keyboard"""
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
 
     data = query.data
 
@@ -455,7 +486,8 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
     elif data.startswith("set_pref_"):
         new_pref = data.replace("set_pref_", "")
         user_id = query.from_user.id
-        user_preferences[user_id] = new_pref
+        user_preferences[str(user_id)] = new_pref
+        save_preferences(user_preferences)
         pref_names = {
             "standard": "💎 Ultra HD Asli (Rekomendasi Utama)",
             "pure_c2pa": "🛡️ 100% Murni (C2PA Strip)",
@@ -527,7 +559,19 @@ def main() -> None:
         asyncio.set_event_loop(loop)
 
     print("🚀 Menjalankan TikTok AI Bypass Bot (@boteraserai_bot)...")
-    app = Application.builder().token(config.BOT_TOKEN).post_init(post_init).build()
+    request = HTTPXRequest(
+        connect_timeout=60.0,
+        read_timeout=300.0,
+        write_timeout=300.0,
+        pool_timeout=60.0,
+    )
+    app = (
+        Application.builder()
+        .token(config.BOT_TOKEN)
+        .request(request)
+        .post_init(post_init)
+        .build()
+    )
 
     # Commands
     app.add_handler(CommandHandler("start", start_command))
