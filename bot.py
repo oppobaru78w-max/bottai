@@ -134,7 +134,7 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     current_mode = user_preferences.get(user_id, "ask")
 
     text = (
-        "⚙️ **Pengaturan Mode Pemrosesan:**\n\n"
+        "⚙️ **Pengaturan Mode Pemrosesan (Ultra HD):**\n\n"
         f"Mode saat ini: `{current_mode.upper()}`\n\n"
         "Pilih bagaimana Anda ingin bot memproses setiap video yang dikirim:"
     )
@@ -142,26 +142,26 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     keyboard = [
         [
             InlineKeyboardButton(
-                "⚡ Standar (Rekomendasi)" + (" ✅" if current_mode == "standard" else ""),
+                "💎 Ultra HD Asli (Rekomendasi)" + (" ✅" if current_mode == "standard" else ""),
                 callback_data="set_pref_standard",
             )
         ],
         [
             InlineKeyboardButton(
-                "🔥 Agresif (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
+                "🛡️ 100% Murni (C2PA Strip)" + (" ✅" if current_mode == "pure_c2pa" else ""),
+                callback_data="set_pref_pure_c2pa",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🔥 Agresif HD (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
                 callback_data="set_pref_aggressive",
             )
         ],
         [
             InlineKeyboardButton(
-                "🎬 Sinematik (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
+                "🎬 Sinematik HD (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
                 callback_data="set_pref_cinematic",
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "🛡️ Hanya C2PA Metadata" + (" ✅" if current_mode == "metadata_only" else ""),
-                callback_data="set_pref_metadata_only",
             )
         ],
         [
@@ -236,22 +236,22 @@ async def handle_video_message(update: Update, context: ContextTypes.DEFAULT_TYP
     caption = (
         f"📹 **Video Diterima!**\n"
         f"• Ukuran: `{file_size_mb:.2f} MB`\n"
-        f"• Resolusi: `{video_obj.width}x{video_obj.height}`\n\n"
-        f"🎯 **Pilih Mode Bypass Deteksi AI TikTok:**"
+        f"• Resolusi Asli: `{video_obj.width}x{video_obj.height}` (HD Dijaga Penuh)\n\n"
+        f"🎯 **Pilih Mode Bypass Deteksi AI TikTok (Kualitas HD Asli):**"
     )
 
     keyboard = [
         [
-            InlineKeyboardButton("⚡ Standar (Rekomendasi)", callback_data=f"proc_{job_id}_standard"),
+            InlineKeyboardButton("💎 Ultra HD Asli (Rekomendasi Utama)", callback_data=f"proc_{job_id}_standard"),
         ],
         [
-            InlineKeyboardButton("🔥 Agresif (Super Bypass)", callback_data=f"proc_{job_id}_aggressive"),
+            InlineKeyboardButton("🛡️ 100% Murni (Hanya Hapus C2PA)", callback_data=f"proc_{job_id}_pure_c2pa"),
         ],
         [
-            InlineKeyboardButton("🎬 Sinematik (35mm Grain)", callback_data=f"proc_{job_id}_cinematic"),
+            InlineKeyboardButton("🔥 Agresif HD (Super Bypass)", callback_data=f"proc_{job_id}_aggressive"),
         ],
         [
-            InlineKeyboardButton("🛡️ Hanya C2PA Metadata", callback_data=f"proc_{job_id}_metadata_only"),
+            InlineKeyboardButton("🎬 Sinematik HD (35mm Grain)", callback_data=f"proc_{job_id}_cinematic"),
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -417,26 +417,26 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "⚡ Standar (Rekomendasi)" + (" ✅" if current_mode == "standard" else ""),
+                    "💎 Ultra HD Asli (Rekomendasi)" + (" ✅" if current_mode == "standard" else ""),
                     callback_data="set_pref_standard",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "🔥 Agresif (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
+                    "🛡️ 100% Murni (C2PA Strip)" + (" ✅" if current_mode == "pure_c2pa" else ""),
+                    callback_data="set_pref_pure_c2pa",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🔥 Agresif HD (Super Bypass)" + (" ✅" if current_mode == "aggressive" else ""),
                     callback_data="set_pref_aggressive",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "🎬 Sinematik (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
+                    "🎬 Sinematik HD (35mm Grain)" + (" ✅" if current_mode == "cinematic" else ""),
                     callback_data="set_pref_cinematic",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "🛡️ Hanya C2PA Metadata" + (" ✅" if current_mode == "metadata_only" else ""),
-                    callback_data="set_pref_metadata_only",
                 )
             ],
             [
@@ -447,7 +447,7 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
             ],
         ]
         await query.message.reply_text(
-            "⚙️ **Pilih Mode Default Pemrosesan:**",
+            "⚙️ **Pilih Mode Default Pemrosesan (Ultra HD):**",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -457,10 +457,10 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
         user_id = query.from_user.id
         user_preferences[user_id] = new_pref
         pref_names = {
-            "standard": "⚡ Standar (Rekomendasi)",
-            "aggressive": "🔥 Agresif (Super Bypass)",
-            "cinematic": "🎬 Sinematik (35mm Grain)",
-            "metadata_only": "🛡️ Hanya C2PA Metadata",
+            "standard": "💎 Ultra HD Asli (Rekomendasi Utama)",
+            "pure_c2pa": "🛡️ 100% Murni (C2PA Strip)",
+            "aggressive": "🔥 Agresif HD (Super Bypass)",
+            "cinematic": "🎬 Sinematik HD (35mm Grain)",
             "ask": "❓ Selalu Tanya Setiap Kirim Video",
         }
         await query.edit_message_text(
