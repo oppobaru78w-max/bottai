@@ -519,7 +519,14 @@ def main() -> None:
         print("=" * 60)
         return
 
-    print("🚀 Menjalankan TikTok AI Bypass Bot...")
+    # Inisialisasi event loop untuk kompatibilitas Python 3.12/3.13/3.14
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    print("🚀 Menjalankan TikTok AI Bypass Bot (@boteraserai_bot)...")
     app = Application.builder().token(config.BOT_TOKEN).post_init(post_init).build()
 
     # Commands
@@ -535,7 +542,7 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(callback_query_handler))
 
     print("✅ Bot siap! Menunggu kiriman video dari pengguna...")
-    app.run_polling(drop_pending_updates=True)
+    app.run_polling(drop_pending_updates=False)
 
 
 if __name__ == "__main__":
