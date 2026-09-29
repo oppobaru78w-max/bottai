@@ -29,27 +29,61 @@ Bot ini membersihkan metadata C2PA, mengacak grid piksel difusi matematis, menyu
 5. BotFather akan memberikan **HTTP API Token** (contoh: `7123456789:AAHk...`). Salin token tersebut.
 
 ### 2. Konfigurasi Token Bot
-Buka file `.env` di folder ini, lalu ganti nilai `BOT_TOKEN`:
+Token bot Anda telah otomatis terpasang di file `.env`:
 ```env
-BOT_TOKEN=7123456789:AAHk_MasukanTokenAndaDisini
+BOT_TOKEN=8107353822:AAEh67cxdsjT1mXLowH8XP9q0gv-CU70GJE
 MAX_FILE_SIZE_MB=20
 ```
+> 🔒 **Keamanan**: File `.env` sudah masuk ke `.gitignore` sehingga tidak akan pernah bocor atau terunggah saat Anda push ke GitHub.
 
-### 3. Jalankan Bot
-Anda dapat menjalankannya dengan salah satu cara berikut:
+---
 
-#### Cara 1: Menggunakan File Batch (Paling Mudah)
-Cukup **double-click file `run.bat`**. Skrip akan otomatis memeriksa dependensi dan menjalankan bot.
+## 🧹 Sistem Pembersihan Otomatis (Anti Penyimpanan Penuh)
 
-#### Cara 2: Lewat Terminal / Command Prompt
+Bot ini dirancang dengan **Garansi 0% Penumpukan Data (Zero Clutter)**:
+1. **Pembersihan Seketika**: Setiap kali video selesai diproses dan dikirimkan ke Telegram, file video mentah dan video hasil di folder `temp/` **langsung dihapus seketika** oleh sistem (`finally:` unlinking).
+2. **Background Auto-Purge**: Bot menjalankan pembersih otomatis setiap 30 menit di latar belakang untuk menghapus sisa file sementara yang usianya lebih dari batas waktu (otomatis dibersihkan sebelum mencapai 24 jam).
+3. **Startup Cleaner**: Setiap kali bot dijalankan ulang, seluruh file sampah sisa sesi lama otomatis dihapus total.
+4. **Cloud Ephemeral Storage**: Pada hosting cloud (seperti Vercel atau Render), direktori sementara `/tmp` akan di-reset otomatis oleh platform saat container berputar, menjamin ruang penyimpanan website/server **tidak akan pernah penuh**.
+
+---
+
+## 🌐 Panduan Deploy ke GitHub & Hosting (Vercel / Render)
+
+### Langkah A: Push ke GitHub Anda
+1. Buat repositori baru di akun GitHub Anda (misal nama repo: `tiktok-ai-bypass-bot`).
+2. Di terminal folder proyek ini, jalankan perintah berikut (ganti `USERNAME` dengan username GitHub Anda):
 ```bash
-python -m pip install -r requirements.txt
-python bot.py
+git remote add origin https://github.com/USERNAME/tiktok-ai-bypass-bot.git
+git push -u origin main
 ```
 
-Setelah muncul pesan:
-`✅ Bot siap! Menunggu kiriman video dari pengguna...`
-Buka bot Anda di Telegram dan tekan tombol **Start**!
+---
+
+### Langkah B: Deploy ke Vercel (Website & Status API)
+1. Buka [vercel.com](https://vercel.com) dan login dengan akun GitHub Anda.
+2. Klik **Add New Project** -> Pilih repositori `tiktok-ai-bypass-bot`.
+3. Di bagian **Environment Variables**, tambahkan:
+   - `BOT_TOKEN` = `8107353822:AAEh67cxdsjT1mXLowH8XP9q0gv-CU70GJE`
+4. Klik **Deploy**.
+5. Vercel akan menghasilkan website landing page modern beserta endpoint status (`/api/status`).
+
+> ⚠️ **Catatan Penting Vercel vs Video Bot**:  
+> Vercel adalah platform *Serverless* yang membatasi durasi eksekusi maksimal 10–15 detik untuk akun gratis. Video AI berdurasi panjang membutuhkan waktu rendering FFmpeg sekitar 15–40 detik. Jika Anda ingin bot Telegram berjalan **24/7 non-stop tanpa batasan durasi render**, gunakan **Render.com** (Gratis).
+
+---
+
+### Langkah C: Deploy Bot 24/7 di Render.com (Gratis & Direkomendasikan)
+1. Buka [render.com](https://render.com) dan daftar/login via GitHub.
+2. Klik **New +** -> Pilih **Background Worker** (atau Web Service).
+3. Sambungkan ke repositori GitHub `tiktok-ai-bypass-bot` Anda.
+4. Pengaturan:
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `python bot.py`
+5. Di bagian **Environment Variables**, tambahkan:
+   - `BOT_TOKEN` = `8107353822:AAEh67cxdsjT1mXLowH8XP9q0gv-CU70GJE`
+6. Klik **Create**. Bot Anda sekarang aktif 24 jam nonstop di cloud tanpa perlu komputer menyala!
 
 ---
 
