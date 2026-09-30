@@ -37,6 +37,8 @@ from processor import (
 
 import time
 import json
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Setup logging
 logging.basicConfig(
@@ -44,6 +46,28 @@ logging.basicConfig(
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
+
+class RenderHealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"TikTok AI Bypass Bot is Online & Running 24/7 on Render!")
+
+    def log_message(self, format, *args):
+        pass  # Supaya log tidak berisik dengan health check Render
+
+def start_health_server() -> None:
+    """Menjalankan HTTP server mini untuk memenuhi port check Render Free Web Service."""
+    port_str = os.getenv("PORT")
+    if port_str:
+        try:
+            port = int(port_str)
+            server = HTTPServer(("0.0.0.0", port), RenderHealthHandler)
+            logger.info(f"🌐 Render Health Server aktif di port {port}")
+            server.serve_forever()
+        except Exception as e:
+            logger.warning(f"Gagal menjalankan Render health server: {e}")
 
 PREFS_FILE = config.BASE_DIR / "user_prefs.json"
 
@@ -612,6 +636,9 @@ def main() -> None:
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+
+    # Jalankan HTTP Health Server untuk Render Web Service (jika PORT diset)
+    threading.Thread(target=start_health_server, daemon=True).start()
 
     print("🚀 Menjalankan TikTok AI Bypass Bot (@boteraserai_bot)...")
     request = HTTPXRequest(
