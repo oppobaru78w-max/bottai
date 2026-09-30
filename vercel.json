@@ -1,9 +1,27 @@
 {
   "version": 2,
+  "functions": {
+    "api/webhook.py": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/status.py": {
+      "maxDuration": 15,
+      "memory": 512
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/webhook",
+      "destination": "/api/webhook.py"
+    },
+    {
+      "source": "/api/status",
       "destination": "/api/status.py"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/webhook.py"
     },
     {
       "source": "/(.*)",

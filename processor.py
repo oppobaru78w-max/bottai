@@ -160,7 +160,7 @@ def process_video_sync(
     cmd.extend([
         "-c:v", "libx264",
         "-crf", preset["crf"],
-        "-preset", "faster",
+        "-preset", "veryfast",
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
     ])
