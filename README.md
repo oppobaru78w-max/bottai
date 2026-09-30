@@ -60,30 +60,15 @@ git push -u origin main
 
 ---
 
-### Langkah B: Deploy ke Vercel (Website & Status API)
-1. Buka [vercel.com](https://vercel.com) dan login dengan akun GitHub Anda.
-2. Klik **Add New Project** -> Pilih repositori `tiktok-ai-bypass-bot`.
-3. Di bagian **Environment Variables**, tambahkan:
-   - `BOT_TOKEN` = `8107353822:AAEh67cxdsjT1mXLowH8XP9q0gv-CU70GJE`
-4. Klik **Deploy**.
-5. Vercel akan menghasilkan website landing page modern beserta endpoint status (`/api/status`).
+### Langkah B: Deploy 100% Gratis di Vercel (24/7 Nonstop via Webhook)
+1. Repositori GitHub: `https://github.com/oppobaru78w-max/bottai`
+2. Di [vercel.com](https://vercel.com), proyek terhubung otomatis dan mendeploy branch `main`.
+3. Endpoint Telegram Webhook berjalan otomatis di:
+   - `https://bottai-eel9.vercel.app/api/webhook`
+4. Setup webhook otomatis terkonfigurasi ke server Telegram. Bot akan aktif 24 jam nonstop di cloud Vercel meskipun komputer/laptop Anda dimatikan!
+5. Untuk mengecek status bot & FFmpeg:
+   - `https://bottai-eel9.vercel.app/api/status`
 
-> ⚠️ **Catatan Penting Vercel vs Video Bot**:  
-> Vercel adalah platform *Serverless* yang membatasi durasi eksekusi maksimal 10–15 detik untuk akun gratis. Video AI berdurasi panjang membutuhkan waktu rendering FFmpeg sekitar 15–40 detik. Jika Anda ingin bot Telegram berjalan **24/7 non-stop tanpa batasan durasi render**, gunakan **Render.com** (Gratis).
-
----
-
-### Langkah C: Deploy Bot 24/7 di Render.com (Gratis & Direkomendasikan)
-1. Buka [render.com](https://render.com) dan daftar/login via GitHub.
-2. Klik **New +** -> Pilih **Background Worker** (atau Web Service).
-3. Sambungkan ke repositori GitHub `tiktok-ai-bypass-bot` Anda.
-4. Pengaturan:
-   - **Environment**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `python bot.py`
-5. Di bagian **Environment Variables**, tambahkan:
-   - `BOT_TOKEN` = `8107353822:AAEh67cxdsjT1mXLowH8XP9q0gv-CU70GJE`
-6. Klik **Create**. Bot Anda sekarang aktif 24 jam nonstop di cloud tanpa perlu komputer menyala!
 
 ---
 
