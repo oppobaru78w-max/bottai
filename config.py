@@ -11,9 +11,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 # Directory configuration
 BASE_DIR = Path(__file__).resolve().parent
 
-# Di Vercel / Linux Cloud, direktori writable hanya ada di /tmp
-if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
-    TEMP_DIR = Path("/tmp/tiktok_bypass")
+import tempfile
+
+# Di Render, Vercel, Railway, atau Linux Cloud, gunakan direktori temp cloud
+if os.getenv("RENDER") or os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.name != "nt":
+    TEMP_DIR = Path(tempfile.gettempdir()) / "tiktok_bypass"
 else:
     TEMP_DIR = BASE_DIR / "temp"
 
@@ -23,31 +25,54 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 MAX_FILE_SIZE_MB = int(os.getenv("MAX_FILE_SIZE_MB", "20"))
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
-# Batas waktu maksimal file sementara tersimpan (dalam detik, default 1 jam / 3600 detik)
-# Agar penyimpanan tidak pernah penuh dan file lama otomatis terhapus
-MAX_FILE_AGE_SECONDS = int(os.getenv("MAX_FILE_AGE_SECONDS", str(3600)))  # 1 jam
+# Batas retensi penyimpanan di Cloud (Maksimal 24 jam = 86400 detik)
+# File sampah otomatis dibersihkan seketika dan maksimal sebelum 24 jam
+MAX_RETENTION_HOURS = 24
+MAX_FILE_AGE_SECONDS = int(os.getenv("MAX_FILE_AGE_SECONDS", str(MAX_RETENTION_HOURS * 3600)))
+
+
+def get_storage_usage_mb() -> float:
+    """Menghitung total ukuran file sementara yang tersimpan (dalam MB)."""
+    total_bytes = 0
+    dirs_to_check = [TEMP_DIR, BASE_DIR / "temp", Path(tempfile.gettempdir()) / "tiktok_bypass"]
+    checked = set()
+
+    for d in dirs_to_check:
+        if d.exists() and d not in checked:
+            checked.add(d)
+            for item in d.iterdir():
+                if item.is_file():
+                    try:
+                        total_bytes += item.stat().st_size
+                    except Exception:
+                        pass
+    return total_bytes / (1024 * 1024)
 
 
 def clean_old_temp_files(max_age_seconds: int = MAX_FILE_AGE_SECONDS) -> int:
     """
-    Menghapus file sementara di folder temp yang lebih tua dari batas waktu (otomatis pembersihan).
-    Mengembalikan jumlah file yang berhasil dihapus.
+    Menghapus file sementara di cloud/lokal yang sudah berumur lebih dari batas waktu.
+    Menjamin penyimpanan cloud tidak akan pernah penuh dan data otomatis terhapus dalam 24 jam.
     """
     import time
     deleted_count = 0
     now = time.time()
-    if not TEMP_DIR.exists():
-        return 0
+    dirs_to_clean = [TEMP_DIR, BASE_DIR / "temp", Path(tempfile.gettempdir()) / "tiktok_bypass"]
+    cleaned_dirs = set()
 
-    for item in TEMP_DIR.iterdir():
-        if item.is_file():
-            try:
-                file_age = now - item.stat().st_mtime
-                if file_age > max_age_seconds:
-                    item.unlink()
-                    deleted_count += 1
-            except Exception:
-                pass
+    for target_dir in dirs_to_clean:
+        if target_dir.exists() and target_dir not in cleaned_dirs:
+            cleaned_dirs.add(target_dir)
+            for item in target_dir.iterdir():
+                if item.is_file():
+                    try:
+                        file_age = now - item.stat().st_mtime
+                        # Hapus jika usia file melebihi batas waktu (atau jika max_age_seconds=0 untuk pembersihan total)
+                        if file_age >= max_age_seconds:
+                            item.unlink()
+                            deleted_count += 1
+                    except Exception:
+                        pass
     return deleted_count
 
 
