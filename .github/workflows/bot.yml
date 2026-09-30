@@ -1,0 +1,76 @@
+name: 24/7 TikTok AI Bypass Telegram Bot
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  actions: write
+  contents: write
+
+concurrency:
+  group: telegram-bot-runner
+  cancel-in-progress: false
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check Existing Active Runner
+        id: check_runner
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUNS_JSON=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/oppobaru78w-max/bottai/actions/runs?status=in_progress")
+          
+          # Count active runs
+          IN_PROGRESS_COUNT=$(echo "$RUNS_JSON" | grep -o '"id":' | wc -l)
+          echo "Active runners count: $IN_PROGRESS_COUNT"
+          
+          # If more than 1 are in progress (meaning another runner is already active), exit safely
+          if [ "$IN_PROGRESS_COUNT" -gt 1 ]; then
+            echo "Bot sudah aktif di runner GitHub lain. Tidak perlu menduplikasi."
+            echo "should_run=false" >> $GITHUB_ENV
+          else
+            echo "should_run=true" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout Repository
+        if: env.should_run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        if: env.should_run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install FFmpeg & Codecs
+        if: env.should_run == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -n 1
+
+      - name: Install Python Dependencies
+        if: env.should_run == 'true'
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Telegram Bot 24/7 on GitHub Cloud
+        if: env.should_run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: oppobaru78w-max/bottai
+          MAX_RUN_MINUTES: 330
+        run: |
+          python bot.py

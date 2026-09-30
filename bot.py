@@ -608,15 +608,53 @@ async def periodic_temp_cleanup() -> None:
             logger.warning(f"Gagal menjalankan auto-cleanup: {e}")
 
 
+async def auto_handover_timer(application: Application, max_minutes: int) -> None:
+    """Otomatis memicu runner baru sebelum batas waktu 6 jam GitHub Actions tercapai."""
+    logger.info(f"⏳ Cloud Watchdog aktif: Bot akan berjalan selama {max_minutes} menit sebelum handover otomatis.")
+    await asyncio.sleep(max_minutes * 60)
+    logger.info("🔄 Waktu rotasi runner tercapai. Memulai runner baru di GitHub Actions Cloud...")
+
+    gh_token = os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN", "")
+    repo = os.getenv("GITHUB_REPOSITORY", "oppobaru78w-max/bottai")
+    if not gh_token:
+        logger.warning("GH_TOKEN / GITHUB_TOKEN tidak ditemukan, auto-handover dilewati.")
+        return
+    try:
+        import urllib.request
+        url = f"https://api.github.com/repos/{repo}/actions/workflows/bot.yml/dispatches"
+        req = urllib.request.Request(
+            url,
+            data=b'{"ref": "main"}',
+            headers={
+                "Authorization": f"Bearer {gh_token}",
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "Bot-Watchdog",
+                "Content-Type": "application/json"
+            }
+        )
+        urllib.request.urlopen(req, timeout=15)
+        logger.info("✅ Berhasil memicu runner GitHub Actions pengganti!")
+    except Exception as e:
+        logger.warning(f"Gagal memicu runner pengganti: {e}")
+
+    await asyncio.sleep(10)
+    application.stop_running()
+
+
 async def post_init(application: Application) -> None:
     """Inisialisasi awal saat bot mulai berjalan."""
     # Bersihkan file sampah sisa sesi sebelumnya saat bot pertama kali dinyalakan
     deleted = config.clean_old_temp_files(max_age_seconds=0)
     if deleted > 0:
         logger.info(f"🧹 Startup Cleanup: Menghapus {deleted} file sampah lama di temp.")
-    
+
     # Jalankan background cleaner berkala
     asyncio.create_task(periodic_temp_cleanup())
+
+    # Jalankan cloud auto-handover timer jika diset (di GitHub Actions)
+    max_minutes = int(os.getenv("MAX_RUN_MINUTES", "0"))
+    if max_minutes > 0:
+        asyncio.create_task(auto_handover_timer(application, max_minutes))
 
 
 def main() -> None:
@@ -639,6 +677,14 @@ def main() -> None:
 
     # Jalankan HTTP Health Server untuk Render Web Service (jika PORT diset)
     threading.Thread(target=start_health_server, daemon=True).start()
+
+    # Pastikan webhook Telegram dihapus agar polling Telegram tidak bentrok / error 409
+    try:
+        import urllib.request
+        urllib.request.urlopen(f"https://api.telegram.org/bot{config.BOT_TOKEN}/deleteWebhook", timeout=10)
+        logger.info("🔌 Webhook lama dibersihkan, siap polling 24 jam.")
+    except Exception as e:
+        logger.warning(f"Info deleteWebhook: {e}")
 
     print("🚀 Menjalankan TikTok AI Bypass Bot (@boteraserai_bot)...")
     request = HTTPXRequest(
